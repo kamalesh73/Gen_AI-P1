@@ -25,6 +25,7 @@ Copy `.env.example` to `.env` and set values as needed:
 
 ```bash
 PORT=5000
+VITE_API_URL=
 GROQ_API_KEY=your_api_key
 GROQ_MODEL=llama-3.3-70b-versatile
 MONGODB_URI=mongodb://127.0.0.1:27017/interview-generator
@@ -32,6 +33,18 @@ JWT_SECRET=replace-with-a-long-random-secret
 ```
 
 If no API key is provided, the server uses local demo-mode questions. If MongoDB is not configured, demo users and history are stored in memory until the server restarts.
+
+## Deployment Notes
+
+If the React frontend is deployed separately from the Express backend, set `VITE_API_URL` in the frontend host.
+
+Example for Vercel frontend + Render backend:
+
+```bash
+VITE_API_URL=https://your-render-backend.onrender.com
+```
+
+Without this, browser requests like `/api/health` go to the Vercel site itself and can return `404` because the Express API is not running inside Vercel.
 
 ## Authentication
 

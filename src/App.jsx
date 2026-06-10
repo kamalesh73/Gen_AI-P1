@@ -19,6 +19,8 @@ const topics = ["Data Structures", "Algorithms", "DBMS", "Operating Systems", "J
 const difficulties = ["easy", "intermediate", "hard"];
 const tokenKey = "interview-generator-token";
 const userKey = "interview-generator-user";
+const apiBaseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const apiUrl = (path) => `${apiBaseUrl}${path}`;
 
 export default function App() {
   const [authMode, setAuthMode] = useState("login");
@@ -39,7 +41,7 @@ export default function App() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/health")
+    fetch(apiUrl("/api/health"))
       .then((res) => res.json())
       .then(setHealth)
       .catch(() => setHealth({ provider: "unknown", database: "unknown", auth: "unknown" }));
@@ -64,7 +66,7 @@ export default function App() {
   const greetingName = user?.name?.split(" ")[0] || "there";
 
   async function apiFetch(url, options = {}) {
-    const response = await fetch(url, {
+    const response = await fetch(apiUrl(url), {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -79,7 +81,7 @@ export default function App() {
 
   async function loadSessions(activeToken = token) {
     if (!activeToken) return;
-    const response = await fetch("/api/sessions", {
+    const response = await fetch(apiUrl("/api/sessions"), {
       headers: { Authorization: `Bearer ${activeToken}` }
     });
     if (response.ok) setSessions(await response.json());
@@ -96,7 +98,7 @@ export default function App() {
         authMode === "signup"
           ? authForm
           : { email: authForm.email, password: authForm.password };
-      const response = await fetch(endpoint, {
+      const response = await fetch(apiUrl(endpoint), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
