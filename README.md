@@ -7,8 +7,9 @@ A MERN-style interview question generator for placement practice. Users choose a
 - React interface for topic, difficulty, quantity, and output mode selection.
 - Express API endpoint for generated practice sets.
 - GroqCloud chat completion integration when `GROQ_API_KEY` is configured.
+- Email/password authentication with JWT sessions.
 - Local fallback generator so the demo works offline.
-- Optional MongoDB storage for recent generated sessions.
+- Optional MongoDB storage for users and recent generated sessions.
 - Duplicate filtering and JSON normalization for model outputs.
 
 ## Run Locally
@@ -23,16 +24,34 @@ Open `http://127.0.0.1:5173`.
 Copy `.env.example` to `.env` and set values as needed:
 
 ```bash
+PORT=5000
 GROQ_API_KEY=your_api_key
 GROQ_MODEL=llama-3.3-70b-versatile
 MONGODB_URI=mongodb://127.0.0.1:27017/interview-generator
+JWT_SECRET=replace-with-a-long-random-secret
 ```
 
-If no API key is provided, the server uses local demo-mode questions.
+If no API key is provided, the server uses local demo-mode questions. If MongoDB is not configured, demo users and history are stored in memory until the server restarts.
+
+## Authentication
+
+The app includes signup and login using `bcryptjs` password hashing and 7-day JWT tokens. Generated sessions are linked to the logged-in user.
+
+Protected routes:
+
+- `POST /api/generate`
+- `GET /api/sessions`
+- `GET /api/auth/me`
 
 ## API
 
 `POST /api/generate`
+
+Requires:
+
+```http
+Authorization: Bearer <token>
+```
 
 ```json
 {
