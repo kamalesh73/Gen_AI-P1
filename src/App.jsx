@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
 import {
   Brain,
   CheckCircle2,
@@ -13,161 +12,18 @@ import {
   Sparkles,
   UserRound
 } from "lucide-react";
+import useInterviewApp from "./hooks/useInterviewApp.js";
 import "./styles.css";
 
 const topics = ["Data Structures", "Algorithms", "DBMS", "Operating Systems", "JavaScript", "System Design"];
 const difficulties = ["easy", "intermediate", "hard"];
-const tokenKey = "interview-generator-token";
-const userKey = "interview-generator-user";
-const apiBaseUrl = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
-const apiUrl = (path) => `${apiBaseUrl}${path}`;
 
 export default function App() {
-  const [authMode, setAuthMode] = useState("login");
-  const [authForm, setAuthForm] = useState({ name: "", email: "", password: "" });
-  const [token, setToken] = useState(() => localStorage.getItem(tokenKey) || "");
-  const [user, setUser] = useState(() => readStoredUser());
-  const [form, setForm] = useState({
-    topic: "Data Structures",
-    difficulty: "intermediate",
-    quantity: 5,
-    mode: "questions-and-answers"
-  });
-  const [result, setResult] = useState(null);
-  const [sessions, setSessions] = useState([]);
-  const [health, setHealth] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch(apiUrl("/api/health"))
-      .then((res) => res.json())
-      .then(setHealth)
-      .catch(() => setHealth({ provider: "unknown", database: "unknown", auth: "unknown" }));
-  }, []);
-
-  useEffect(() => {
-    if (!token) return;
-
-    apiFetch("/api/auth/me")
-      .then((data) => {
-        saveSession(data.token || token, data.user);
-        loadSessions(token);
-      })
-      .catch(() => logout());
-  }, [token]);
-
-  const providerLabel = useMemo(() => {
-    if (!health) return "Checking";
-    return health.provider === "groqcloud" ? "GroqCloud enabled" : "Local demo mode";
-  }, [health]);
-
-  const greetingName = user?.name?.split(" ")[0] || "there";
-
-  async function apiFetch(url, options = {}) {
-    const response = await fetch(apiUrl(url), {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {})
-      }
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Request failed.");
-    return data;
-  }
-
-  async function loadSessions(activeToken = token) {
-    if (!activeToken) return;
-    const response = await fetch(apiUrl("/api/sessions"), {
-      headers: { Authorization: `Bearer ${activeToken}` }
-    });
-    if (response.ok) setSessions(await response.json());
-  }
-
-  async function handleAuth(event) {
-    event.preventDefault();
-    setAuthLoading(true);
-    setError("");
-
-    try {
-      const endpoint = authMode === "signup" ? "/api/auth/signup" : "/api/auth/login";
-      const body =
-        authMode === "signup"
-          ? authForm
-          : { email: authForm.email, password: authForm.password };
-      const response = await fetch(apiUrl(endpoint), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error || "Authentication failed.");
-
-      saveSession(data.token, data.user);
-      setAuthForm({ name: "", email: "", password: "" });
-      loadSessions(data.token);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setAuthLoading(false);
-    }
-  }
-
-  async function generateQuestions(event) {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const data = await apiFetch("/api/generate", {
-        method: "POST",
-        body: JSON.stringify(form)
-      });
-
-      setResult(data);
-      loadSessions();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function saveSession(nextToken, nextUser) {
-    localStorage.setItem(tokenKey, nextToken);
-    localStorage.setItem(userKey, JSON.stringify(nextUser));
-    setToken(nextToken);
-    setUser(nextUser);
-  }
-
-  function logout() {
-    localStorage.removeItem(tokenKey);
-    localStorage.removeItem(userKey);
-    setToken("");
-    setUser(null);
-    setResult(null);
-    setSessions([]);
-  }
-
-  function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function updateAuthField(field, value) {
-    setAuthForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function copySet() {
-    if (!result) return;
-    const text = result.questions
-      .map((item, index) => `${index + 1}. ${item.question}\nAnswer: ${item.answer}`)
-      .join("\n\n");
-    navigator.clipboard.writeText(text);
-  }
+  const {
+    authMode, setAuthMode, authForm, updateAuthField, token, user, form, result, setResult, sessions,
+    health, loading, authLoading, error, providerLabel, greetingName, handleAuth, generateQuestions,
+    logout, updateField, copySet
+  } = useInterviewApp();
 
   if (!user || !token) {
     return (
@@ -257,7 +113,6 @@ export default function App() {
       </main>
     );
   }
-
   return (
     <main className="app-shell">
       <section className="top-bar">
@@ -435,12 +290,4 @@ export default function App() {
       </section>
     </main>
   );
-}
-
-function readStoredUser() {
-  try {
-    return JSON.parse(localStorage.getItem(userKey) || "null");
-  } catch {
-    return null;
-  }
 }
