@@ -12,6 +12,27 @@ A MERN-style interview question generator for placement practice. Users choose a
 - Optional MongoDB storage for users and recent generated sessions.
 - Duplicate filtering and JSON normalization for model outputs.
 
+## Architecture
+
+The backend follows MVC with services for integrations and business operations:
+
+```text
+server/
+  config/       Database connection
+  controllers/  HTTP request handling and responses
+  middleware/   Authentication and request middleware
+  models/       MongoDB User and Session schemas
+  routes/       API route definitions
+  services/     Authentication, persistence, and question generation
+  app.js        Express app and route wiring
+  index.js      Environment loading, database startup, and server listen
+```
+
+The React frontend keeps the view in `src/App.jsx`, app state and actions in
+`src/hooks/useInterviewApp.js`, and HTTP access in `src/services/api.js`.
+In-memory persistence and local question generation remain available when
+MongoDB or GroqCloud credentials are not configured.
+
 ## Run Locally
 
 ```bash
